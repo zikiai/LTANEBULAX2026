@@ -1,13 +1,73 @@
-# rookies — NebulaX Train Condition Monitoring
+# LTANEBULAX2026
 
-One maintenance workspace for four train subsystems: rail corrugation, door
-operation, air conditioning and structural health. Built for Nebula X PS3.
+**Train Condition Monitoring · Nebula X Hackathon 2026 · Team rookies**
 
-**[Open the public prototype](https://nebulax-workspace-1029817906638.asia-southeast1.run.app/)** ·
+Turning train sensor recordings into maintenance findings, inspection priorities
+and downloadable predictions—all in one dashboard.
+
+**[Hackathon prototype](https://nebulax-workspace-1029817906638.asia-southeast1.run.app/)** ·
 **[Model details](docs/rail-model-release.md)** ·
 **[Deployment details](integrated_app/CLOUD_DEPLOYMENT.md)**
 
-## Try it
+The prototype was deployed during the hackathon using a temporary Google Cloud
+project. Its continued availability depends on that project remaining active.
+
+## About the hackathon
+
+Nebula X challenged teams to turn real-world problem statements into working
+prototypes. Our team, **rookies**, tackled **Problem Statement 3: Train Condition
+Monitoring**: using onboard sensor data to identify faults and estimate the
+condition of train subsystems.
+
+The challenge was more than training a single classifier. Each subsystem had
+different input signals, output formats and evaluation metrics. Teams needed to
+develop suitable analysis methods, build an application that could process new
+recordings, and submit predictions for unlabelled test inputs. The organisers
+retained the reference answers for scoring.
+
+## What we built
+
+We brought all four subsystems into a shared maintenance workspace:
+
+| Component | What the system does | Main input |
+|---|---|---|
+| Rail corrugation | Classifies a recording as Normal, Side I or Side II corrugation | Vibration and shock signals |
+| Door operation | Finds opening/closing movements and identifies abnormal resistance | Motor current and door position |
+| Air conditioning | Ranks train cars for inspection for a possible refrigerant leak | Temperature and operating-mode readings |
+| Structural health | Estimates cumulative fatigue damage | Dynamic stress measurements |
+
+Users can upload a recording, review the predicted result alongside measured
+evidence, record an inspection note, and download the required prediction CSV.
+The aim is to help technicians decide what needs attention—not replace their
+inspection or judgement.
+
+## Engineering highlights
+
+- **One interface, four approaches.** Classification, movement segmentation,
+  inspection ranking and regression share the same upload-to-review workflow.
+- **A shared-side rail detector.** One Random Forest learns from both rail sides,
+  then checks each side using a common fault threshold. The selected submission
+  achieved approximately **0.83 macro F1**, as reported by the team from the
+  competition scorer. This is not an accuracy percentage.
+- **Reproducible exports.** All 86 official input files were rerun through the
+  deployed service; all four output CSVs matched the selected submission exactly.
+- **Cloud integration.** The public dashboard runs on Cloud Run while raw files
+  and stored analysis results remain in private Cloud Storage and Firestore.
+
+This is a team project. The repository combines the four component pipelines
+and their integration into the shared application.
+
+## Technology stack
+
+| Layer | Technologies |
+|---|---|
+| Interface | HTML, CSS, JavaScript |
+| Application service | Python, Flask, Gunicorn |
+| Data and modelling | pandas, NumPy, SciPy, scikit-learn, rainflow |
+| Deployment | Docker, Google Cloud Run |
+| Storage | Google Cloud Storage, Firestore |
+
+## Explore the prototype
 
 1. Open **Review findings** and select a component. The page initially shows
    the complete prepared batch: 68 rail recordings, 38 detected door movements,
@@ -36,7 +96,8 @@ accessible for seven days; review notes are temporary.
 These are **not held-out test scores**. Development data informed model choices.
 Door's perfect development result is not a promise of perfect predictions. SHM's
 reported validation has not been independently rerun during integration.
-Only the organiser holds the official test answers.
+Only the organiser holds the official test answers. The rounded competition
+result mentioned above is separate from these development metrics.
 
 ## Architecture
 
@@ -66,7 +127,9 @@ docker run --rm -p 8080:8080 nebulax-workspace
 Open `http://localhost:8080`. Local results use memory unless cloud variables are
 configured. See [deployment notes](integrated_app/CLOUD_DEPLOYMENT.md) for runtime
 limits and permissions. No raw dataset is included in the submission bundle;
-judges can upload their organiser-provided inputs.
+use recordings that follow the organiser's input schemas. Raw datasets and the
+Door model bundle are not included in a fresh clone, so the repository is not a
+one-command demo without those prerequisites.
 
 ## Repository and checks
 
@@ -83,10 +146,16 @@ node integrated_app/test-result-sources.mjs
 `tools/build_submission.py` runs the official cloud test catalogue through the
 app's inference endpoint and validates all four submission CSVs.
 
-This is a decision-support prototype, not a certified diagnostic system or
-remaining-useful-life forecaster. Technicians must confirm findings. Keep the
-temporary cloud project active through judging; instance limits are not a hard
-spending cap.
+## Limitations
+
+This is a hackathon decision-support prototype, not a certified diagnostic system
+or remaining-useful-life forecaster. Technicians must confirm findings. Results
+on the supplied data do not establish performance on other trains or operating
+conditions. The AI improvement tab describes a future human-reviewed workflow;
+the deployed models do not automatically learn from uploaded recordings.
+
+For anyone redeploying the project: keep credentials and raw data private, and
+monitor cloud usage. Instance limits are not a hard spending cap.
 
 ## References
 
@@ -95,4 +164,4 @@ spending cap.
 - [Required example schemas](https://github.com/aochinwen/NebulaX-Hackathon-ProblemStatement/tree/main/PS3/04_Example_Submission)
 
 Raw datasets, credentials and environments must not be committed.
-The required video is prepared separately and is not included in this package.
+The hackathon video was handled separately and is not included in this repository.
